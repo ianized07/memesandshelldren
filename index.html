@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pickleball Arena 🏓</title>
+  <style>
+    :root {
+      --bg:     #0d1117;
+      --card:   #161b22;
+      --border: #30363d;
+      --green:  #4ade80;
+      --red:    #f87171;
+      --text:   #e6edf3;
+      --muted:  #8b949e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ── Screens ─────────────────────────────────────── */
+    .screen { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 980px; padding: 24px; }
+    .screen.active { display: flex; }
+
+    /* ── Selection ───────────────────────────────────── */
+    .sel-title {
+      font-size: 2.8rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #4ade80, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .sel-sub { color: var(--muted); margin-bottom: 36px; font-size: 1rem; }
+
+    .pgrid {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .pcard {
+      width: 158px;
+      padding: 20px 14px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      cursor: pointer;
+      transition: all 0.18s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+    }
+    .pcard:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 32px rgba(74,222,128,0.18);
+    }
+
+    .av-wrap {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid var(--border);
+      transition: border-color 0.18s;
+      flex-shrink: 0;
+    }
+    .pcard:hover .av-wrap { border-color: var(--green); }
+    .av-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .av-fb {
+      width: 96px; height: 96px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.4rem; font-weight: 900; color: #fff;
+    }
+    .pcard-name { font-weight: 700; font-size: 1rem; color: var(--text); }
+
+    /* ── VS Screen ───────────────────────────────────── */
+    .vs-wrap { display: flex; align-items: center; gap: 56px; margin-top: 16px; }
+    .vs-slot { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .vs-av {
+      width: 130px; height: 130px;
+      border-radius: 50%; overflow: hidden;
+      border: 4px solid;
+    }
+    .vs-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .vs-av-fb {
+      width: 130px; height: 130px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3.5rem; font-weight: 900; color: #fff;
+    }
+    .vs-name { font-size: 1.4rem; font-weight: 700; }
+    .vs-badge {
+      font-size: 0.7rem; font-weight: 700;
+      padding: 3px 12px; border-radius: 99px;
+    }
+    .vs-mid {
+      font-size: 5rem; font-weight: 900; color: #ef4444;
+      text-shadow: 0 0 40px rgba(239,68,68,0.6);
+    }
+    .vs-cd { color: var(--muted); font-size: 0.95rem; margin-top: 40px; }
+
+    /* ── Game Screen ─────────────────────────────────── */
+    .game-ui {
+      display: flex; justify-content: space-between; align-items: center;
+      width: 900px; margin-bottom: 10px;
+    }
+    #c { border-radius: 12px; cursor: none; display: block; box-shadow: 0 0 60px rgba(0,0,0,0.7); }
+    .game-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      width: 900px; margin-top: 10px;
+    }
+
+    /* ── Game Over ───────────────────────────────────── */
+    .over-av {
+      width: 120px; height: 120px;
+      border-radius: 50%; overflow: hidden;
+      margin: 0 auto 18px;
+      border: 4px solid var(--green);
+    }
+    .over-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .over-av-fb {
+      width: 120px; height: 120px;
+      border-radius: 50%; margin: 0 auto 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem; font-weight: 900; color: #fff;
+      border: 4px solid var(--green);
+    }
+    .over-result { font-size: 2.8rem; font-weight: 900; margin-bottom: 8px; text-align: center; }
+    .over-score  { color: var(--muted); font-size: 1.05rem; margin-bottom: 32px; }
+
+    .btns { display: flex; gap: 14px; }
+    .btn {
+      padding: 12px 28px; border-radius: 12px;
+      font-weight: 700; font-size: 0.95rem;
+      cursor: pointer; border: none;
+      transition: all 0.15s;
+    }
+    .btn:hover { transform: translateY(-2px); opacity: 0.88; }
+    .btn-g { background: var(--green); color: var(--bg); }
+    .btn-d { background: #21262d; color: var(--text); border: 1px solid var(--border); }
+
+    .glow-title {
+      font-size: 2.5rem; font-weight: 900;
+      background: linear-gradient(135deg, #4ade80, #22d3ee);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 32px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── SELECTION ─────────────────────────────────────────── -->
+<div id="sel-screen" class="screen active">
+  <h1 class="sel-title">🏓 PICKLEBALL ARENA</h1>
+  <p class="sel-sub">Choose your player</p>
+  <div class="pgrid" id="pgrid"></div>
+</div>
+
+<!-- ── VS ────────────────────────────────────────────────── -->
+<div id="vs-screen" class="screen">
+  <h1 class="glow-title">⚡ GET READY!</h1>
+  <div class="vs-wrap">
+    <div class="vs-slot" id="vl"></div>
+    <div class="vs-mid">VS</div>
+    <div class="vs-slot" id="vr"></div>
+  </div>
+  <p class="vs-cd">Match starts in <span id="cd">3</span>…</p>
+</div>
+
+<!-- ── GAME ──────────────────────────────────────────────── -->
+<div id="game-screen" class="screen">
+  <div class="game-ui">
+    <span id="lname" style="font-weight:700;color:#4ade80;font-size:1rem"></span>
+    <span id="hud"   style="font-size:2rem;font-weight:900;font-family:monospace">0 — 0</span>
+    <span id="rname" style="font-weight:700;color:#f87171;font-size:1rem"></span>
+  </div>
+  <canvas id="c" width="900" height="520"></canvas>
+  <div class="game-footer">
+    <span style="color:#484f58;font-size:0.8rem">🖱 Move mouse to control · Click to serve</span>
+    <button class="btn btn-d" onclick="quit()" style="font-size:0.82rem;padding:7px 16px;">✕ Quit</button>
+  </div>
+</div>
+
+<!-- ── GAME OVER ──────────────────────────────────────────── -->
+<div id="over-screen" class="screen">
+  <div id="over-body" style="text-align:center"></div>
+  <div class="btns">
+    <button class="btn btn-g" onclick="rematch()">🔄 Rematch</button>
+    <button class="btn btn-d" onclick="goSel()">👤 Change Player</button>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────────────────────────────────────
+const PLAYERS = [
+  {
+    id: 'ian',    name: 'Ian',    color: '#3b82f6',
+    imgPos: 'center top',
+    crop: { x:.05, y:.02, w:.90, h:.65 },
+  },
+  {
+    id: 'arnel',  name: 'Arnel',  color: '#f97316',
+    imgPos: 'center 10%',
+    crop: { x:.00, y:.00, w:1.0, h:.90 },
+  },
+  {
+    id: 'mark',   name: 'Mark',   color: '#10b981',
+    imgPos: 'center top',
+    crop: { x:.05, y:.00, w:.85, h:.60 },
+  },
+  {
+    id: 'martin', name: 'Martin', color: '#8b5cf6',
+    imgPos: 'center top',
+    crop: { x:.05, y:.05, w:.90, h:.65 },
+  },
+  {
+    id: 'earl',   name: 'Earl',   color: '#ef4444',
+    imgPos: '55% 10%',
+    crop: { x:.20, y:.05, w:.65, h:.55 },
+  },
+]
+
+// Pre-load all images
+PLAYERS.forEach(p => {
+  p.img = new Image()
+  p.img.src = `players/${p.id}.jpg`
+  p.img.onerror = () => { p.img = null }
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+const CW = 900, CH = 520
+const PW = 14,  PH = 88       // paddle width / height
+const PX = 56,  CPX = CW - 56 - PW  // paddle X positions
+const BR = 9                   // ball radius
+const HR = 32                  // head avatar radius
+const WIN = 11                 // points to win
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+let me  = null   // selected player object
+let cpu = null   // opponent player object
+let G   = null   // live game state
+let raf = null   // requestAnimationFrame id
+let finalScore = { p: 0, c: 0 }
+
+const canvas = document.getElementById('c')
+const ctx    = canvas.getContext('2d')
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCREEN HELPER
+// ─────────────────────────────────────────────────────────────────────────────
+const SCREENS = ['sel-screen','vs-screen','game-screen','over-screen']
+function show(id) {
+  SCREENS.forEach(s => document.getElementById(s).classList.toggle('active', s === id))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SELECTION SCREEN
+// ─────────────────────────────────────────────────────────────────────────────
+function buildSel() {
+  const grid = document.getElementById('pgrid')
+  grid.innerHTML = ''
+  PLAYERS.forEach(p => {
+    const card = document.createElement('div')
+    card.className = 'pcard'
+    card.style.setProperty('--hc', p.color)
+
+    // Avatar
+    const wrap = document.createElement('div')
+    wrap.className = 'av-wrap'
+    wrap.style.borderColor = p.color + '40'
+
+    const img = document.createElement('img')
+    img.src = `players/${p.id}.jpg`
+    img.alt = p.name
+    img.style.objectPosition = p.imgPos
+    img.onerror = () => {
+      const fb = document.createElement('div')
+      fb.className = 'av-fb'
+      fb.style.background = p.color
+      fb.textContent = p.name[0]
+      wrap.innerHTML = ''
+      wrap.appendChild(fb)
+    }
+    wrap.appendChild(img)
+    card.appendChild(wrap)
+
+    const nm = document.createElement('span')
+    nm.className = 'pcard-name'
+    nm.textContent = p.name
+    card.appendChild(nm)
+
+    card.addEventListener('click', () => pick(p))
+    grid.appendChild(card)
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PLAYER PICK & VS SCREEN
+// ─────────────────────────────────────────────────────────────────────────────
+function pick(player) {
+  me = player
+  const pool = PLAYERS.filter(p => p.id !== player.id)
+  cpu = pool[Math.floor(Math.random() * pool.length)]
+  startVS()
+}
+
+function startVS() {
+  show('vs-screen')
+  buildVSSlot('vl', me,  '#4ade80', 'YOU')
+  buildVSSlot('vr', cpu, '#f87171', 'CPU')
+
+  let n = 3
+  document.getElementById('cd').textContent = n
+  const t = setInterval(() => {
+    n--
+    document.getElementById('cd').textContent = n
+    if (n <= 0) { clearInterval(t); startGame() }
+  }, 1000)
+}
+
+function buildVSSlot(id, p, border, badge) {
+  const el = document.getElementById(id)
+  el.innerHTML = ''
+
+  // Avatar circle
+  const hasImg = p.img && !p.img.complete ? true : (p.img && p.img.naturalWidth > 0)
+
+  const avWrap = document.createElement('div')
+  avWrap.className = 'vs-av'
+  avWrap.style.borderColor = border
+
+  const img = document.createElement('img')
+  img.src = `players/${p.id}.jpg`
+  img.alt = p.name
+  img.style.objectPosition = p.imgPos
+  img.onerror = () => {
+    const fb = document.createElement('div')
+    fb.className = 'vs-av-fb'
+    fb.style.background = p.color
+    fb.style.borderColor = border
+    fb.textContent = p.name[0]
+    avWrap.replaceWith(fb)
+  }
+  avWrap.appendChild(img)
+  el.appendChild(avWrap)
+
+  const nm = document.createElement('span')
+  nm.className = 'vs-name'
+  nm.style.color = border
+  nm.textContent = p.name
+  el.appendChild(nm)
+
+  const bdg = document.createElement('span')
+  bdg.className = 'vs-badge'
+  bdg.style.cssText = `background:${border}22;color:${border}`
+  bdg.textContent = badge
+  el.appendChild(bdg)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GAME INIT
+// ─────────────────────────────────────────────────────────────────────────────
+function startGame() {
+  show('game-screen')
+  document.getElementById('lname').textContent = me.name
+  document.getElementById('rname').textContent = cpu.name
+  initG()
+  if (raf) cancelAnimationFrame(raf)
+  loop()
+}
+
+function initG() {
+  G = {
+    pY:     CH / 2 - PH / 2,
+    cY:     CH / 2 - PH / 2,
+    mouseY: CH / 2,
+    state:  'wait',      // 'wait' | 'play' | 'point'
+    ptTick: 0,
+    pScore: 0,
+    cScore: 0,
+    ball:   waitBall(),
+  }
+  updateHUD()
+}
+
+function waitBall() {
+  return { x: PX + PW + BR + 2, y: CH / 2, vx: 0, vy: 0, spd: 0 }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MOUSE INPUT
+// ─────────────────────────────────────────────────────────────────────────────
+canvas.addEventListener('mousemove', e => {
+  if (!G) return
+  const r = canvas.getBoundingClientRect()
+  G.mouseY = (e.clientY - r.top) * (CH / r.height)
+})
+
+canvas.addEventListener('click', () => {
+  if (!G || G.state !== 'wait') return
+  G.state = 'play'
+  const rel   = ((G.pY + PH / 2) - CH / 2) / (CH / 2)  // -1 to +1
+  const angle = rel * 0.45                               // max ~25deg
+  const spd   = 6.5
+  G.ball = {
+    x:   PX + PW + BR + 2,
+    y:   G.pY + PH / 2,
+    vx:  spd * Math.cos(angle),
+    vy:  spd * Math.sin(angle),
+    spd: spd,
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GAME LOOP
+// ─────────────────────────────────────────────────────────────────────────────
+function loop() {
+  if (!G) return
+  update()
+  draw()
+  raf = requestAnimationFrame(loop)
+}
+
+function update() {
+  if (!G) return
+
+  // Paddle follows mouse
+  const target = G.mouseY - PH / 2
+  G.pY = Math.max(0, Math.min(CH - PH, target))
+
+  if (G.state === 'wait') {
+    G.ball.x = PX + PW + BR + 2
+    G.ball.y = G.pY + PH / 2
+    return
+  }
+
+  if (G.state === 'point') {
+    if (--G.ptTick <= 0) {
+      G.state  = 'wait'
+      G.ball   = waitBall()
+    }
+    return
+  }
+
+  // ── CPU AI ──────────────────────────────────────────
+  const cpuCenter = G.cY + PH / 2
+  const diff      = G.ball.y - cpuCenter
+  const cpuSpd    = 5.0
+  if (Math.abs(diff) > 5)
+    G.cY += Math.sign(diff) * Math.min(cpuSpd, Math.abs(diff))
+  G.cY = Math.max(0, Math.min(CH - PH, G.cY))
+
+  // ── Ball movement ────────────────────────────────────
+  G.ball.x += G.ball.vx
+  G.ball.y += G.ball.vy
+
+  // Wall bounce (top / bottom)
+  if (G.ball.y - BR <= 0)  { G.ball.y = BR;      G.ball.vy =  Math.abs(G.ball.vy) }
+  if (G.ball.y + BR >= CH) { G.ball.y = CH - BR; G.ball.vy = -Math.abs(G.ball.vy) }
+
+  // ── Player paddle collision ──────────────────────────
+  if (
+    G.ball.vx < 0 &&
+    G.ball.x - BR <= PX + PW &&
+    G.ball.x + BR >= PX &&
+    G.ball.y + BR >= G.pY &&
+    G.ball.y - BR <= G.pY + PH
+  ) {
+    G.ball.x  = PX + PW + BR + 1
+    G.ball.vx = Math.abs(G.ball.vx)
+    const rel  = (G.ball.y - (G.pY + PH / 2)) / (PH / 2)
+    G.ball.vy  = rel * 7
+    G.ball.spd = Math.min(G.ball.spd + 0.35, 15)
+    norm(G.ball)
+  }
+
+  // ── CPU paddle collision ─────────────────────────────
+  if (
+    G.ball.vx > 0 &&
+    G.ball.x + BR >= CPX &&
+    G.ball.x - BR <= CPX + PW &&
+    G.ball.y + BR >= G.cY &&
+    G.ball.y - BR <= G.cY + PH
+  ) {
+    G.ball.x  = CPX - BR - 1
+    G.ball.vx = -Math.abs(G.ball.vx)
+    const rel  = (G.ball.y - (G.cY + PH / 2)) / (PH / 2)
+    G.ball.vy  = rel * 7
+    G.ball.spd = Math.min(G.ball.spd + 0.35, 15)
+    norm(G.ball)
+  }
+
+  // ── Scoring ──────────────────────────────────────────
+  if (G.ball.x + BR < 0) { G.cScore++; scored() }
+  if (G.ball.x - BR > CW) { G.pScore++; scored() }
+}
+
+function norm(ball) {
+  const mag = Math.sqrt(ball.vx ** 2 + ball.vy ** 2)
+  if (!mag) return
+  ball.vx = (ball.vx / mag) * ball.spd
+  ball.vy = (ball.vy / mag) * ball.spd
+}
+
+function scored() {
+  updateHUD()
+  if (G.pScore >= WIN || G.cScore >= WIN) {
+    finalScore.p = G.pScore
+    finalScore.c = G.cScore
+    cancelAnimationFrame(raf)
+    raf = null
+    G = null
+    setTimeout(showOver, 500)
+    return
+  }
+  G.state  = 'point'
+  G.ptTick = 70
+}
+
+function updateHUD() {
+  if (!G) return
+  document.getElementById('hud').textContent = `${G.pScore} — ${G.cScore}`
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DRAW
+// ─────────────────────────────────────────────────────────────────────────────
+function draw() {
+  if (!G) return
+
+  // ── Court ────────────────────────────────────────────
+  ctx.fillStyle = '#2e7d52'
+  ctx.fillRect(0, 0, CW, CH)
+
+  ctx.fillStyle = '#37946a'
+  ctx.fillRect(22, 22, CW - 44, CH - 44)
+
+  // Lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.72)'
+  ctx.lineWidth = 2
+  ctx.strokeRect(22, 22, CW - 44, CH - 44)
+
+  const NX = CW / 2
+  const KW = 132   // kitchen width
+
+  // Kitchen (non-volley zone) lines
+  ctx.beginPath(); ctx.moveTo(NX - KW, 22);     ctx.lineTo(NX - KW, CH - 22); ctx.stroke()
+  ctx.beginPath(); ctx.moveTo(NX + KW, 22);     ctx.lineTo(NX + KW, CH - 22); ctx.stroke()
+
+  // Center service lines (outside kitchen)
+  ctx.beginPath(); ctx.moveTo(22,       CH / 2); ctx.lineTo(NX - KW, CH / 2); ctx.stroke()
+  ctx.beginPath(); ctx.moveTo(NX + KW,  CH / 2); ctx.lineTo(CW - 22, CH / 2); ctx.stroke()
+
+  // Net
+  for (let y = 8; y < CH - 8; y += 20) {
+    ctx.fillStyle = (Math.floor(y / 10) % 2 === 0) ? 'rgba(255,255,255,0.85)' : 'rgba(200,200,200,0.5)'
+    ctx.fillRect(NX - 3, y, 6, 12)
+  }
+  // Net posts
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(NX - 3, 0,      6, 12)
+  ctx.fillRect(NX - 3, CH - 12, 6, 12)
+
+  // ── Paddles + heads ──────────────────────────────────
+  drawPaddle(PX,  G.pY, me,  true)
+  drawPaddle(CPX, G.cY, cpu, false)
+
+  // ── Ball ─────────────────────────────────────────────
+  // Shadow
+  ctx.beginPath()
+  ctx.ellipse(G.ball.x, G.ball.y + BR + 5, BR * 0.65, BR * 0.22, 0, 0, Math.PI * 2)
+  ctx.fillStyle = 'rgba(0,0,0,0.22)'
+  ctx.fill()
+
+  // Ball body
+  ctx.beginPath()
+  ctx.arc(G.ball.x, G.ball.y, BR, 0, Math.PI * 2)
+  const bg = ctx.createRadialGradient(G.ball.x - 2, G.ball.y - 2, 1, G.ball.x, G.ball.y, BR)
+  bg.addColorStop(0, '#f5f94a')
+  bg.addColorStop(1, '#b9c100')
+  ctx.fillStyle = bg
+  ctx.fill()
+  ctx.strokeStyle = '#8a9200'
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+
+  // Pickleball holes texture
+  ctx.fillStyle = 'rgba(0,0,0,0.16)'
+  ;[[-3,-3],[3,-3],[0,3],[-3,3],[3,3],[0,-4],[0,0]].forEach(([hx,hy]) => {
+    ctx.beginPath()
+    ctx.arc(G.ball.x + hx, G.ball.y + hy, 1.3, 0, Math.PI * 2)
+    ctx.fill()
+  })
+
+  // ── Overlays ─────────────────────────────────────────
+  if (G.state === 'wait') {
+    ctx.fillStyle = 'rgba(74,222,128,0.88)'
+    ctx.font = 'bold 12px "Segoe UI", sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    const ty = Math.max(16, G.pY - 14)
+    ctx.fillText('▶ CLICK TO SERVE', PX + 105, ty)
+  }
+
+  if (G.state === 'point') {
+    const a = Math.min(1, G.ptTick / 35) * 0.18
+    ctx.fillStyle = `rgba(255,255,255,${a})`
+    ctx.fillRect(0, 0, CW, CH)
+  }
+}
+
+function drawPaddle(x, y, player, isP) {
+  const c1 = isP ? '#1e3a8a' : '#7f1d1d'
+  const c2 = isP ? '#3b82f6' : '#ef4444'
+
+  ctx.save()
+  ctx.shadowColor = isP ? '#60a5fa' : '#fca5a5'
+  ctx.shadowBlur  = 16
+
+  const g = ctx.createLinearGradient(x, y, x + PW, y + PH)
+  g.addColorStop(0, c1)
+  g.addColorStop(1, c2)
+  ctx.fillStyle = g
+  pill(x, y, PW, PH)
+  ctx.fill()
+  ctx.restore()
+
+  // Highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.13)'
+  pill(x + 2, y + 5, 4, PH - 10)
+  ctx.fill()
+
+  // Head avatar beside paddle
+  const hx = isP ? x - HR - 5 : x + PW + HR + 5
+  const hy = y + PH / 2
+  drawHead(hx, hy, player, isP)
+}
+
+function drawHead(x, y, player, isP) {
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(x, y, HR, 0, Math.PI * 2)
+  ctx.clip()
+
+  let drawn = false
+  if (player.img && player.img.complete && player.img.naturalWidth > 0) {
+    const c  = player.crop
+    const iw = player.img.naturalWidth
+    const ih = player.img.naturalHeight
+    try {
+      ctx.drawImage(
+        player.img,
+        c.x * iw, c.y * ih, c.w * iw, c.h * ih,
+        x - HR, y - HR, HR * 2, HR * 2
+      )
+      drawn = true
+    } catch (e) {}
+  }
+
+  if (!drawn) {
+    ctx.fillStyle = player.color
+    ctx.fillRect(x - HR, y - HR, HR * 2, HR * 2)
+    ctx.fillStyle = '#fff'
+    ctx.font = `bold ${HR}px "Segoe UI", sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(player.name[0], x, y)
+  }
+
+  ctx.restore()
+
+  // Ring
+  ctx.beginPath()
+  ctx.arc(x, y, HR, 0, Math.PI * 2)
+  ctx.strokeStyle = isP ? 'rgba(96,165,250,0.85)' : 'rgba(252,165,165,0.85)'
+  ctx.lineWidth = 3
+  ctx.stroke()
+}
+
+// Rounded-rect "pill" path helper
+function pill(x, y, w, h) {
+  const r = Math.min(w, h) / 2
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.lineTo(x + w - r, y)
+  ctx.quadraticCurveTo(x + w, y,     x + w, y + r)
+  ctx.lineTo(x + w, y + h - r)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+  ctx.lineTo(x + r, y + h)
+  ctx.quadraticCurveTo(x, y + h,     x, y + h - r)
+  ctx.lineTo(x, y + r)
+  ctx.quadraticCurveTo(x, y,         x + r, y)
+  ctx.closePath()
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GAME OVER
+// ─────────────────────────────────────────────────────────────────────────────
+function showOver() {
+  show('over-screen')
+  const won    = finalScore.p >= WIN
+  const winner = won ? me : cpu
+
+  const body = document.getElementById('over-body')
+  body.innerHTML = ''
+
+  // Avatar
+  const avEl = document.createElement('div')
+  const img  = document.createElement('img')
+  img.src    = `players/${winner.id}.jpg`
+  img.alt    = winner.name
+  img.style.objectPosition = winner.imgPos
+  img.onerror = () => {
+    avEl.className       = 'over-av-fb'
+    avEl.style.background = winner.color
+    avEl.textContent     = winner.name[0]
+    img.remove()
+  }
+  avEl.className = 'over-av'
+  avEl.appendChild(img)
+  body.appendChild(avEl)
+
+  const result = document.createElement('div')
+  result.className = 'over-result'
+  result.style.color = won ? '#4ade80' : '#f87171'
+  result.textContent = won ? '🏆 YOU WIN!' : '😔 YOU LOSE'
+  body.appendChild(result)
+
+  const score = document.createElement('div')
+  score.className = 'over-score'
+  score.textContent = `${me.name}  ${finalScore.p}  —  ${finalScore.c}  ${cpu.name}`
+  body.appendChild(score)
+}
+
+function rematch() { startGame() }
+
+function goSel() {
+  if (raf) { cancelAnimationFrame(raf); raf = null }
+  G = null
+  buildSel()
+  show('sel-screen')
+}
+
+function quit() { goSel() }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+buildSel()
+</script>
+</body>
+</html>
